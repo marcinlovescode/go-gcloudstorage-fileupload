@@ -1,0 +1,43 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Filed Upload Service that stores files associated by reference id",
+        "title": "FileRequest Upload Service",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/files/ping": {
+            "get": {
+                "description": "Returns Pong when service is alive",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Ping-pong healthcheck",
+                "operationId": "files-ping-pong",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

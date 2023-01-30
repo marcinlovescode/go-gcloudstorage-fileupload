@@ -1,0 +1,29 @@
+basePath: /api
+host: localhost:8080
+info:
+  contact: {}
+  description: Filed Upload Service that stores files associated by reference id
+  title: FileRequest Upload Service
+  version: "1.0"
+paths:
+  /files/ping:
+    get:
+      consumes:
+      - application/json
+      description: Returns Pong when service is alive
+      operationId: files-ping-pong
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Ping-pong healthcheck
+      tags:
+      - files
+swagger: "2.0"
