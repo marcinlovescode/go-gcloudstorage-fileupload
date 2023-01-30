@@ -1,4 +1,16 @@
 basePath: /api
+definitions:
+  files.File:
+    properties:
+      id:
+        example: 1
+        format: int64
+        type: integer
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        format: uuid
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -6,6 +18,67 @@ info:
   title: FileRequest Upload Service
   version: "1.0"
 paths:
+  /files/:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload file and attach it to the object of id
+      operationId: upload-file
+      parameters:
+      - description: File
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Reference Object ID
+        in: formData
+        name: referenceObjectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/files.File'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Upload file
+      tags:
+      - files
+  /files/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get file details by id
+      operationId: get-file-by-id
+      parameters:
+      - description: File ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/files.File'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show file
+      tags:
+      - files
   /files/ping:
     get:
       consumes:

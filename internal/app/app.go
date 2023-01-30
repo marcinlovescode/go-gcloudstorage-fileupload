@@ -22,7 +22,6 @@ func Run(cfg *config.Config) {
 	zerologLogger := logger.NewZerologLogger(cfg.Log.Level)
 	handler := CreateHttpHandlers(zerologLogger)
 	AppendSwagger(handler)
-	httpRouter.NewGinHttpRouter(handler, zerologLogger)
 	httpServer := httpserver.New(handler,
 		httpserver.Port(cfg.HTTP.Port),
 		httpserver.ShutdownTimeout(time.Duration(cfg.HTTP.ShutdownTimeout)),
