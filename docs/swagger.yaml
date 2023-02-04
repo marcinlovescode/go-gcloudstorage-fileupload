@@ -1,14 +1,12 @@
 basePath: /api
 definitions:
-  files.File:
+  models.Attachment:
     properties:
+      fileName:
+        type: string
       id:
-        example: 1
-        format: int64
-        type: integer
-      uuid:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        format: uuid
+        type: string
+      url:
         type: string
     type: object
 host: localhost:8080
@@ -25,7 +23,7 @@ paths:
       description: Upload file and attach it to the object of id
       operationId: upload-file
       parameters:
-      - description: File
+      - description: FileDto
         in: formData
         name: file
         required: true
@@ -38,10 +36,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/files.File'
+        "204":
+          description: No Content
         "500":
           description: Internal Server Error
           schema:
@@ -50,13 +46,13 @@ paths:
       tags:
       - files
   /files/{id}:
-    get:
+    delete:
       consumes:
       - application/json
-      description: Get file details by id
-      operationId: get-file-by-id
+      description: Remove file by id
+      operationId: remove-file-by-id
       parameters:
-      - description: File ID
+      - description: FileID
         in: path
         name: id
         required: true
@@ -64,10 +60,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/files.File'
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -76,7 +70,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Show file
+      summary: Remove file
       tags:
       - files
   /files/ping:
@@ -97,6 +91,38 @@ paths:
           schema:
             type: string
       summary: Ping-pong healthcheck
+      tags:
+      - files
+  /files/reference/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get file by reference id
+      operationId: get-file-by-reference-id
+      parameters:
+      - description: FileDto ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Attachment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Show files
       tags:
       - files
 swagger: "2.0"

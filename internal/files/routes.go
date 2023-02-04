@@ -1,28 +1,28 @@
 package files
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/http"
 	"path/filepath"
 
-	"github.com/marcinlovescode/go-clean-fileupload/internal/pkg/logger"
+	"github.com/gin-gonic/gin"
+
+	"github.com/marcinlovescode/go-gcloudstorage-fileupload/internal/files/models"
+	"github.com/marcinlovescode/go-gcloudstorage-fileupload/internal/pkg/logger"
 )
 
 type FileRequest struct {
-	ID string `uri:"id" binding:"required,uuid"`
+	ID string `uri:"id" binding:"required"`
 }
 
-type File struct {
-	ID   int       `json:"id" example:"1" format:"int64"`
-	UUID uuid.UUID `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
-}
+type Attachments []models.Attachment
 
-func AppendFileRoutes(handler *gin.RouterGroup, logger logger.Logger) {
+func AppendFileRoutes(handler *gin.RouterGroup, logger logger.Logger, useCase UseCase) {
 	routerGroup := handler.Group("/files")
 	routerGroup.GET("/ping", pingHandler)
-	routerGroup.GET("/:id", showFile(logger))
-	routerGroup.POST("/", uploadFile(logger))
+	routerGroup.GET("/reference/:id", showFiles(logger, useCase))
+	routerGroup.POST("", uploadFile(logger, useCase))
+	routerGroup.DELETE(":id", deleteFile(logger, useCase))
+
 }
 
 // pingHandler godoc
@@ -40,34 +40,35 @@ func pingHandler(ginCtx *gin.Context) {
 	ginCtx.String(http.StatusOK, "Pong")
 }
 
-// ShowFile
+// showFiles godoc
 //
-// @Summary     Show file
-// @Description Get file details by id
-// @ID          get-file-by-id
+// @Summary     Show files
+// @Description Get file by reference id
+// @ID          get-file-by-reference-id
 // @Tags  	    files
 // @Accept      json
 // @Produce     json
-// @Param		id	path string	true "File ID"
-// @Success     200 {object} File
+// @Param		id	path string	true "FileDto ID"
+// @Success     200 {object} Attachments
 // @Failure     400 {string} Error
 // @Failure     500 {string} Error
-// @Router      /files/{id} [get]
-func showFile(logger logger.Logger) gin.HandlerFunc {
+// @Router      /files/reference/{id} [get]
+func showFiles(logger logger.Logger, useCase UseCase) gin.HandlerFunc {
 	return func(ginCtx *gin.Context) {
+		ctx := ginCtx.Copy()
 		var file FileRequest
 		if err := ginCtx.ShouldBindUri(&file); err != nil {
-			logger.Error(err, "http - files")
+			logger.Debug(err, "files - showFiles")
 			ginCtx.String(http.StatusBadRequest, err.Error())
 			return
 		}
-		parsedUUID, err := uuid.Parse(file.ID)
+		result, err := useCase.ListBy(ctx, "tenant1", file.ID)
 		if err != nil {
-			logger.Error(err, "http - files")
-			ginCtx.String(http.StatusBadRequest, err.Error())
+			logger.Error(err, "files - showFiles")
+			ginCtx.String(http.StatusInternalServerError, "can't get files")
 			return
 		}
-		ginCtx.JSON(http.StatusOK, File{ID: 1, UUID: parsedUUID})
+		ginCtx.JSON(http.StatusOK, *result)
 	}
 }
 
@@ -79,33 +80,76 @@ func showFile(logger logger.Logger) gin.HandlerFunc {
 // @Tags  	    files
 // @Accept      multipart/form-data
 // @Produce     json
-// @Param		file formData file true "File"
+// @Param		file formData file true "FileDto"
 // @Param		referenceObjectId formData string true "Reference Object ID"
-// @Success     200 {object} File
+// @Success     204
 // @Failure     500 {string} Error
 // @Router      /files/ [post]
-func uploadFile(logger logger.Logger) gin.HandlerFunc {
+func uploadFile(logger logger.Logger, useCase UseCase) gin.HandlerFunc {
 	return func(ginCtx *gin.Context) {
+		ctx := ginCtx.Copy()
 		referenceObjectId := ginCtx.PostForm("referenceObjectId")
 		if referenceObjectId == "" {
-			logger.Debug("http - files - uploadFile - referenceObjectId is empty")
+			logger.Debug("files - uploadFile - referenceObjectId is empty")
 			ginCtx.String(http.StatusBadRequest, "referenceObjectId is empty")
 		}
 
 		file, err := ginCtx.FormFile("file")
 		if err != nil {
-			logger.Debug(err, "http - files - uploadFile")
+			logger.Debug(err, "files - uploadFile")
 			ginCtx.String(http.StatusBadRequest, "corrupted file")
 			return
 		}
-
 		filename := filepath.Base(file.Filename)
-		if err := ginCtx.SaveUploadedFile(file, filename); err != nil {
-			logger.Debug(err, "http - files - uploadFile")
+		fileHandler, err := file.Open()
+		if err != nil {
+			logger.Debug(err, "files - uploadFile")
 			ginCtx.String(http.StatusBadRequest, "corrupted file")
 			return
 		}
+		err = useCase.UploadFile(ctx, "tenant1", models.UploadFileCommand{
+			CreatorId:   "UserId",
+			FileName:    filename,
+			ReferenceID: referenceObjectId,
+			File:        fileHandler,
+		})
+		if err != nil {
+			logger.Error(err, "files - uploadFile")
+			ginCtx.String(http.StatusBadRequest, "can't upload file")
+			return
+		}
+		ginCtx.Status(http.StatusNoContent)
+	}
+}
 
-		ginCtx.JSON(http.StatusOK, "Empty")
+// deleteFile godoc
+//
+// @Summary     Remove file
+// @Description Remove file by id
+// @ID          remove-file-by-id
+// @Tags  	    files
+// @Accept      json
+// @Produce     json
+// @Param		id	path string	true "FileID"
+// @Success     204
+// @Failure     400 {string} Error
+// @Failure     500 {string} Error
+// @Router      /files/{id} [delete]
+func deleteFile(logger logger.Logger, useCase UseCase) gin.HandlerFunc {
+	return func(ginCtx *gin.Context) {
+		ctx := ginCtx.Copy()
+		var file FileRequest
+		if err := ginCtx.ShouldBindUri(&file); err != nil {
+			logger.Debug(err, "files - deleteFile")
+			ginCtx.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		err := useCase.DeleteFile(ctx, "tenant1", file.ID)
+		if err != nil {
+			logger.Error(err, "files - deleteFile")
+			ginCtx.String(http.StatusInternalServerError, "can't remove file")
+			return
+		}
+		ginCtx.Status(http.StatusNoContent)
 	}
 }

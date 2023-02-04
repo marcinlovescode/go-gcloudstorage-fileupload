@@ -30,10 +30,6 @@ docker-rm-volume: ### remove docker volume
 	docker volume rm go-clean-template_pg-data
 .PHONY: docker-rm-volume
 
-linter: ### check by golangci linter
-	golangci-lint run
-.PHONY: linter-golangci
-
 test: ### run test
 	go test -v -cover -race ./...
 .PHONY: test

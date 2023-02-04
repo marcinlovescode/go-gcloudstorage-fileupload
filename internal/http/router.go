@@ -2,9 +2,10 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
-	_ "github.com/marcinlovescode/go-clean-fileupload/docs"
-	"github.com/marcinlovescode/go-clean-fileupload/internal/files"
-	"github.com/marcinlovescode/go-clean-fileupload/internal/pkg/logger"
+
+	_ "github.com/marcinlovescode/go-gcloudstorage-fileupload/docs"
+	"github.com/marcinlovescode/go-gcloudstorage-fileupload/internal/files"
+	"github.com/marcinlovescode/go-gcloudstorage-fileupload/internal/pkg/logger"
 )
 
 // NewGinHttpRouter -.
@@ -14,11 +15,12 @@ import (
 // @version     1.0
 // @host        localhost:8080
 // @BasePath    /api
-func NewGinHttpRouter(handler *gin.Engine, logger logger.Logger) {
-	appendApiRoutes(handler, logger)
+func NewGinHttpRouter(logger logger.Logger, useCase files.UseCase, handler *gin.Engine) error {
+	appendApiRoutes(handler, logger, useCase)
+	return nil
 }
 
-func appendApiRoutes(handler *gin.Engine, logger logger.Logger) {
+func appendApiRoutes(handler *gin.Engine, logger logger.Logger, filesUseCase files.UseCase) {
 	routerGroup := handler.Group("/api")
-	files.AppendFileRoutes(routerGroup, logger)
+	files.AppendFileRoutes(routerGroup, logger, filesUseCase)
 }

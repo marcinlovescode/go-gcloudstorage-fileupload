@@ -1,28 +1,24 @@
 version: '3.9'
 services:
-
-  postgres:
-    container_name: postgres
-    image: postgres
-    volumes:
-      - pg-data:/var/lib/postgresql/data
+  gcs-emulator:
+    container_name: gcs-emulator
+    image: oittaa/gcp-storage-emulator
     environment:
-      POSTGRES_USER: 'postgres'
-      POSTGRES_PASSWORD: 'postgres'
-      POSTGRES_DB: 'postgres'
+      - PORT=9023
     ports:
-      - 5432:5432
+      - 9023:9023
+    volumes:
+      - ./gcsserver/data:/storage
+    command: start --default-bucket=test-bucket --in-memory
 
   app:
     build: .
     container_name: app
     image: app
-    environment:
-      PG_URL: 'postgres://user:pass@postgres:5432/postgres'
     ports:
       - 8080:8080
     depends_on:
-      - postgres
+      - gcs-emulator
 
 volumes:
   pg-data:

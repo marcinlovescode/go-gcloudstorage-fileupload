@@ -8,10 +8,10 @@ import (
 
 type (
 	Config struct {
-		App  `yaml:"app"`
-		HTTP `yaml:"http"`
-		Log  `yaml:"logger"`
-		PG   `yaml:"postgres"`
+		App           `yaml:"app"`
+		HTTP          `yaml:"http"`
+		Log           `yaml:"logger"`
+		GCloudStorage `yaml:"gcloud_storage"`
 	}
 
 	App struct {
@@ -30,18 +30,25 @@ type (
 		Level string `env-required:"true" yaml:"log_level"   env:"LOG_LEVEL"`
 	}
 
-	PG struct {
-		PoolMax int    `env-required:"true" yaml:"pool_max" env:"PG_POOL_MAX"`
-		URL     string `env-required:"true"                 env:"PG_URL"`
+	GCloudStorage struct {
+		ProjectName       string `env-required:"true" yaml:"project_name"    env:"GCLOUD_PROJECT_NAME"`
+		BucketName        string `env-required:"true" yaml:"bucket_name" env:"GCLOUD_STORAGE_BUCKET_NAME"`
+		UrlExpirationTime int    `env-required:"true" yaml:"url_expiration_time" env:"GCLOUD_STORAGE_URL_EXPIRATION_TIME"`
+		UseEmulator       bool   `env-required:"true" yaml:"use_emulator" env:"GCLOUD_STORAGE_USE_EMULATOR" env-default:"false"`
+		EmulatorPort      int    `env-required:"false" yaml:"emulator_port" env:"GCLOUD_STORAGE_EMULATOR_PORT"`
+		UseCredentials    bool   `yaml:"use_credentials" env:"GCLOUD_STORAGE_USE_CREDENTIALS" env-default:"false"`
+		AccessId          string `yaml:"access_id" env:"GCLOUD_STORAGE_ACCESS_ID"`
+		PrivateKeyBase64  string `yaml:"private_key_base_64" env:"GCLOUD_STORAGE_PRIVATE_KEY_BASE_64"`
+		Insecure          bool   `yaml:"insecure" env:"GCLOUD_STORAGE_INSECURE" env-default:"false"`
 	}
 )
 
-func NewConfig() (*Config, error) {
+func NewConfig(path string) (*Config, error) {
 	cfg := &Config{}
 
-	err := cleanenv.ReadConfig("./config/config.yml", cfg)
+	err := cleanenv.ReadConfig(path, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("config error: %w", err)
+		return nil, fmt.Errorf("config - NewConfig - can't read config: %w", err)
 	}
 
 	err = cleanenv.ReadEnv(cfg)

@@ -32,7 +32,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "file",
-                        "description": "File",
+                        "description": "FileDto",
                         "name": "file",
                         "in": "formData",
                         "required": true
@@ -46,11 +46,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/files.File"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "500": {
                         "description": "Internal Server Error",
@@ -91,9 +88,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/files/{id}": {
+        "/files/reference/{id}": {
             "get": {
-                "description": "Get file details by id",
+                "description": "Get file by reference id",
                 "consumes": [
                     "application/json"
                 ],
@@ -103,12 +100,12 @@ const docTemplate = `{
                 "tags": [
                     "files"
                 ],
-                "summary": "Show file",
-                "operationId": "get-file-by-id",
+                "summary": "Show files",
+                "operationId": "get-file-by-reference-id",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "File ID",
+                        "description": "FileDto ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -118,8 +115,53 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/files.File"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Attachment"
+                            }
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{id}": {
+            "delete": {
+                "description": "Remove file by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Remove file",
+                "operationId": "remove-file-by-id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "FileID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -138,18 +180,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "files.File": {
+        "models.Attachment": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "integer",
-                    "format": "int64",
-                    "example": 1
+                "fileName": {
+                    "type": "string"
                 },
-                "uuid": {
-                    "type": "string",
-                    "format": "uuid",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                "id": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         }
